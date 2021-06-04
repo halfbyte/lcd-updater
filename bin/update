@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+MAX_SIZE = 2048
+
+require 'liquid'
+
+
+def read_variables(datadir)
+  variables = {}
+  files = Dir[File.join(datadir, 'variables', '*.var.*')]
+  files.each do |filename|
+    if filename.match(/\.txt$/)
+      name = File.basename(filename, '.var.txt')
+      variables[name] = File.read(filename)
+    else
+      raise "Not implemented"
+    end
+  end
+  variables
+end
+
+def read_templates(datadir)
+  files = Dir[File.join(datadir, 'texts', '*.txt')]
+  files.sort.map do |fn|
+    Liquid::Template.parse(File.read(fn))
+  end
+end
+
+
+datadir = ARGV[0]
+
+context = read_variables(datadir)
+templates = read_templates(datadir)
+
+output = []
+
+templates.each do |template|
+  rendered = template.render(context)
+  if output.join(' - ').bytesize + rendered.bytesize + 3 < MAX_SIZE
+    output << rendered
+  end
+end
+
+puts output.join(' - ')
